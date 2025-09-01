@@ -7,11 +7,10 @@ import org.springframework.stereotype.Service
 
 @Service
 class UserConsumer {
-
     private val logger = LoggerFactory.getLogger(UserConsumer::class.java)
 
-    @KafkaListener(topics = ["user-topic"], groupId = "order-group")
-    fun consumeUser(userDto: UserDto) {
-        logger.info("Получен UserDto: {}", userDto)
+    @KafkaListener(topics = ["user-topic"], groupId = "order-service-group")
+    fun consume(user: UserDto) {
+        println("Received user: $user")
     }
 }
