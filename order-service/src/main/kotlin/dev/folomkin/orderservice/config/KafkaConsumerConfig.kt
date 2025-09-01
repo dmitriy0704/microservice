@@ -16,11 +16,9 @@ import org.springframework.kafka.support.serializer.JsonDeserializer
 @Configuration
 class KafkaConsumerConfig {
 
-    @KafkaListener(topics = ["user-topic"], groupId = "order-service-group")
-    fun consume(user: UserDto) {
-        println("Received user: $user")
-    }
 
+
+//-> Для кастомного использования
 //    @Bean
 //    fun consumerFactory(): ConsumerFactory<String, UserDto> {
 //        val props = mapOf(
