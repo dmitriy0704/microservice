@@ -24,7 +24,8 @@ subprojects {
 
     val appModules = listOf(
         "order-service",
-        "user-service"
+        "user-service",
+        "auth-service"
     )
 
     plugins.withId("org.jetbrains.kotlin.jvm") {

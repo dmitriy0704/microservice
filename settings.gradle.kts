@@ -5,3 +5,4 @@ rootProject.name = "microservice"
 include("shared")
 include("user-service")
 include("order-service")
+include("auth-service")
