@@ -1,58 +1,85 @@
 version: "3.9"
 
 services:
+  # ---------- User Service ----------
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    ports:
+      - "8081:8080"
+    depends_on:
+      - order-service
+      - kafka
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/userdb
+      SPRING_DATASOURCE_USERNAME: pgadmin
+      SPRING_DATASOURCE_PASSWORD: dv9899
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  # ---------- Order Service ----------
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    ports:
+      - "8082:8080"
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/orderdb
+      SPRING_DATASOURCE_USERNAME: pgadmin
+      SPRING_DATASOURCE_PASSWORD: dv9899
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  # ---------- PostgreSQL ----------
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: pgadmin
+      POSTGRES_PASSWORD: dv9899
+      POSTGRES_DB: userdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # ---------- Kafka (KRaft mode) ----------
   kafka:
     image: confluentinc/cp-kafka:7.7.1
+    hostname: kafka
     container_name: kafka
     ports:
-      - "9092:9092"     # доступ внутри docker-сети
-      - "29092:29092"   # доступ с хоста
+      - "9092:9092"
+      - "9094:9094"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093,PLAINTEXT_HOST://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      CLUSTER_ID: abcdefghijklmnopqrstuvwx123456
-    networks:
-      - kafka-net
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka_data:/var/lib/kafka/data
 
+  # ---------- Kafka UI ----------
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     ports:
-      - "8085:8080"
+      - "8080:8080"
+    restart: always
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     depends_on:
       - kafka
-    networks:
-      - kafka-net
 
-  user-service:
-    build: ./user-service
-    container_name: user-service
-    depends_on:
-      - kafka
-    environment:
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    networks:
-      - kafka-net
-
-  order-service:
-    build: ./order-service
-    container_name: order-service
-    depends_on:
-      - kafka
-    environment:
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    networks:
-      - kafka-net
-
-networks:
-  kafka-net:
-    driver: bridge
+volumes:
+  postgres_data:
+  kafka_data:
