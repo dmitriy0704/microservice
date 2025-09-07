@@ -8,6 +8,10 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping(path = ["/api/auth"])
 class AuthController {
 
-    @GetMapping
-    fun authTest(): String = "test"
+    @GetMapping("/public/hello")
+    fun publicAuthTest(): String = "Привет, это публичный эндпоинт"
+
+    @GetMapping("/secure/hello")
+    fun privateAuthTest(): String = "Привет, это приватный эндпоинт"
+
 }
