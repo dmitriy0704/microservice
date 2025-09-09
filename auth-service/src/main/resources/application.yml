@@ -3,5 +3,3 @@ spring:
     name: auth-service
 server:
   port: 8098
-
-
