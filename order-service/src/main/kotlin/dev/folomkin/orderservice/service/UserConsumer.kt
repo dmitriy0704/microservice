@@ -5,7 +5,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.LoggerFactory
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.core.KafkaTemplate
-import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Service
 
 @Service
@@ -13,33 +12,50 @@ class UserConsumer(val kafkaTemplate: KafkaTemplate<String, UserDto>) {
     private val logger = LoggerFactory.getLogger(UserConsumer::class.java)
 
     @KafkaListener(
-        topics = ["user-topic"],
+        topics = ["user-events"],
         groupId = "order-service-group",
         containerFactory = "kafkaListenerContainerFactory"
     )
     fun consume(record: ConsumerRecord<String, UserDto>) {
 
         try {
-            if (record.value().name == "error") {
-                throw RuntimeException("Test error")
-            }
+//            if (record.value().name == "error") {
+//                throw RuntimeException("Test error")
+//            }
             val id = record.key()  // здесь ваш UUID
             val user = record.value()
-            println("Received user: $user with id: $id")
-            println("Processed user: ${record.value()}")
-        } catch (e: Exception) {
-            logger.error(e.message, e)
+            println("✅ Получено: $user with id: $id")
+            // тут бизнес-логика обработки
 
-            println("⚠ Error: ${e.message}, sending to DLQ...")
-            // просто отправляем в DLQ вручную
-            kafkaTemplate.send(
-                "${record.topic()}.DLT",
-                record.key(),
-                record.value()
-            )
+            if(user.name == "FAIL"){
+                logger.error("❌ Имитация ошибки")
+                println("❌ Имитация ошибки")
+                throw RuntimeException("Имитируем сбой обработки")
+            }
+
+        } catch (ex: Exception) {
+            println("⚠️ Ошибка обработки, отправляем в retry-topic: ${ex.message}")
+            kafkaTemplate.send("user-events-retry", record.key(), record.value())
         }
     }
 
+    @KafkaListener(topics = ["user-events-retry"], groupId = "retry-service-group")
+    fun retry(record: ConsumerRecord<String, UserDto>) {
+        try {
+            println("♻️ Retry обработка: ${record.value()}")
+            kafkaTemplate.send("user-events", record.key(), record.value()) // снова пробуем основной топик
+        } catch (ex: Exception) {
+            println("❌ Ошибка в retry, помещаем в DLT: ${ex.message}")
+            kafkaTemplate.send("user-events-dlt", record.key(), record.value())
+        }
+    }
+
+
+    @KafkaListener(topics = ["user-events-dlt"], groupId = "dlt-service-group")
+    fun consumeFailed(record: ConsumerRecord<String, UserDto>) {
+        println("💀 Сообщение в DLT: ${record.value()}")
+        // тут можно логировать, алертить, сохранять в БД
+    }
 
     /**
      * Фильтрация сообщений прямо в @KafkaListener

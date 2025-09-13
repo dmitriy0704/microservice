@@ -2,6 +2,8 @@ package dev.folomkin.userservice.controller
 
 import dev.folomkin.shared.dto.UserDto
 import dev.folomkin.userservice.service.UserProducer
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -28,9 +30,10 @@ class UserController(
         )
     }
 
-
-    @PostMapping
-    fun createUser(@RequestBody user: UserDto) {
+    @PostMapping("/send")
+    fun sendMessage(@RequestBody user: UserDto): ResponseEntity<String> {
         userProducer.sendUser(user)
-    }
+        return ResponseEntity
+            .accepted()
+            .body("Сообщение принято в очередь на отправку")    }
 }

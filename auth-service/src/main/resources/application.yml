@@ -3,3 +3,6 @@ spring:
     name: auth-service
 server:
   port: 8098
+auth:
+  jwt:
+    secret: 5JzoMbk6E5qIqHSuBTgeQCARtUsxAkBiHwdjXOSW8kWdXzYmP3X51C0

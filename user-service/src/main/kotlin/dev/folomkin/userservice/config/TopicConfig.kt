@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class KafkaTopicConfig(
+class TopicConfig(
     @Value("\${spring.kafka.topic.name}") private val topicName: String,
     @Value("\${spring.kafka.topic.partitions}") private val partitions: Int,
     @Value("\${spring.kafka.topic.replication-factor}") private val replicationFactor: Short
